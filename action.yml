@@ -1,5 +1,5 @@
-name: 'BaseMachina Sync'
-description: 'Run the BaseMachina `bm sync` CLI and post the diff as a PR sticky comment.'
+name: 'BaseMachina'
+description: 'Manage BaseMachina actions from your CI/CD pipeline.'
 author: 'BaseMachina'
 branding:
   icon: refresh-cw
