@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# run.sh 用 mock CLI stub。BM_MOCK_OUTPUT / BM_MOCK_EXIT_CODE で挙動制御
+set -u
+
+CALL_LOG="${BM_MOCK_CALL_LOG:-mock-call.log}"
+{
+  printf 'args: %s\n' "$*"
+  printf 'env.BM_OIDC_TOKEN=%s\n' "${BM_OIDC_TOKEN:-}"
+} >> "${CALL_LOG}"
+
+OUTPUT="${BM_MOCK_OUTPUT:-mock sync output}"
+printf '%s\n' "${OUTPUT}"
+
+exit "${BM_MOCK_EXIT_CODE:-0}"

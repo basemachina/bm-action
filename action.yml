@@ -1,0 +1,106 @@
+name: 'BaseMachina Sync'
+description: 'Run the BaseMachina `bm sync` CLI and post the diff as a PR sticky comment.'
+author: 'BaseMachina'
+branding:
+  icon: refresh-cw
+  color: blue
+
+inputs:
+  audience:
+    description: 'OIDC audience to request from GitHub. Must match the audience configured on the BaseMachina trust policy.'
+    required: true
+  command:
+    description: 'Subcommand to run. Currently only `sync` is supported.'
+    required: false
+    default: 'sync'
+  environment-id:
+    description: 'Target environment ID. Omit to sync to the development environment.'
+    required: false
+    default: ''
+  from:
+    description: 'Source environment ID passed as `--from`. Effective only when `environment-id` is set, and must differ from the target.'
+    required: false
+    default: ''
+  working-directory:
+    description: 'Working directory where basemachina.config.ts lives.'
+    required: false
+    default: '.'
+  dry:
+    description: 'Control dry-run: `auto` (default, pull_request=dry), `true` (always dry), or `false` (always apply).'
+    required: false
+    default: 'auto'
+  with-disable:
+    description: 'Pass `--with-disable` to `bm sync`. Without `environment-id`, disables actions missing from the config file in the development environment. With `environment-id`, propagates the disabled state from the source environment to the target.'
+    required: false
+    default: 'false'
+
+outputs:
+  exit_code:
+    description: 'Exit code of `bm sync` (0 = success, non-zero = failure).'
+    value: ${{ steps.bm-sync.outputs.exit_code }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Authenticate
+      id: auth
+      shell: bash
+      env:
+        INPUT_AUDIENCE: ${{ inputs.audience }}
+      run: ${{ github.action_path }}/scripts/auth.sh
+
+    - name: Run bm sync
+      id: bm-sync
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        INPUT_COMMAND: ${{ inputs.command }}
+        INPUT_ENVIRONMENT_ID: ${{ inputs.environment-id }}
+        INPUT_FROM: ${{ inputs.from }}
+        INPUT_DRY: ${{ inputs.dry }}
+        INPUT_WITH_DISABLE: ${{ inputs.with-disable }}
+        BM_OIDC_TOKEN: ${{ steps.auth.outputs.oidc_token }}
+        NODE_AUTH_TOKEN: ${{ github.token }}
+        GITHUB_EVENT_NAME: ${{ github.event_name }}
+      run: ${{ github.action_path }}/scripts/run.sh
+
+    - name: Resolve PR number
+      id: pr
+      uses: actions/github-script@v9
+      with:
+        script: |
+          if (context.eventName === 'pull_request') {
+            core.setOutput('number', String(context.issue.number));
+            return;
+          }
+          if (context.eventName !== 'push') {
+            core.setOutput('number', '');
+            return;
+          }
+          // push イベント時は該当 commit に紐づく merged PR を探す
+          const { data: prs } = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            commit_sha: context.sha,
+          });
+          const merged = prs.find((p) => p.merged_at);
+          core.setOutput('number', merged ? String(merged.number) : '');
+
+    - name: Post sticky comment
+      id: post-comment
+      if: ${{ steps.pr.outputs.number != '' }}
+      continue-on-error: true
+      uses: marocchino/sticky-pull-request-comment@v3
+      with:
+        number: ${{ steps.pr.outputs.number }}
+        header: ${{ steps.bm-sync.outputs.comment_tag }}
+        path: ${{ inputs.working-directory }}/bm-sync-output.md
+
+    - name: Fail on sync error
+      shell: bash
+      if: ${{ steps.bm-sync.outputs.exit_code != '0' }}
+      env:
+        BM_SYNC_EXIT_CODE: ${{ steps.bm-sync.outputs.exit_code }}
+      run: |
+        echo "::error::bm sync failed with exit code ${BM_SYNC_EXIT_CODE}"
+        exit "${BM_SYNC_EXIT_CODE}"

@@ -1,0 +1,9 @@
+{
+  "name": "bm-action-integration-test-installed-cli",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Fixture project for bm-action integration test that installs @basemachina/cli into node_modules.",
+  "dependencies": {
+    "@basemachina/cli": "latest"
+  }
+}

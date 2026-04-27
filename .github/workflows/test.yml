@@ -1,0 +1,167 @@
+name: Test
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  bats:
+    # macOS runner は bats 1.13 が日本語テスト名をバイト列解釈し「unknown test name」で失敗するため ubuntu のみ。
+    # Action 自体の macOS 対応は integration job で検証する
+    name: Bats unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install bats
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+      - name: Run bats
+        run: bats tests/
+
+  lint:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ludeeus/action-shellcheck@2.0.0
+        env:
+          SHELLCHECK_OPTS: -x
+        with:
+          scandir: './scripts'
+          additional_files: 'tests/fixtures/bm-mock'
+
+  integration:
+    name: Integration mock (${{ matrix.os }})
+    needs: [bats, lint]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+      packages: read
+    steps:
+      - uses: actions/checkout@v6
+
+      # 本 Action は Node セットアップ・依存インストールを呼び出し側責任とするため、
+      # 実利用と同じパターンを integration job でも踏襲する
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      - name: Prepare test project
+        shell: bash
+        run: |
+          mkdir -p test-project
+          cp tests/fixtures/basemachina.config.ts test-project/
+          cp tests/fixtures/package.json test-project/
+
+      - name: Register mock CLI command
+        shell: bash
+        run: |
+          echo "BM_CLI_COMMAND=${GITHUB_WORKSPACE}/tests/fixtures/bm-mock" >> "$GITHUB_ENV"
+
+      - name: Run action (dev sync, dry-run)
+        id: dev-dry
+        uses: ./
+        with:
+          audience: https://example.test
+          working-directory: test-project
+          dry: 'true'
+
+      - name: Verify dev-dry outputs
+        shell: bash
+        env:
+          DEV_DRY_EXIT_CODE: ${{ steps.dev-dry.outputs.exit_code }}
+        run: |
+          test "${DEV_DRY_EXIT_CODE}" = "0"
+
+      - name: Run action (env sync, dry-run)
+        id: env-dry
+        uses: ./
+        with:
+          audience: https://example.test
+          working-directory: test-project
+          environment-id: env-integration-test
+          dry: 'true'
+
+      - name: Verify env-dry outputs
+        shell: bash
+        env:
+          ENV_DRY_EXIT_CODE: ${{ steps.env-dry.outputs.exit_code }}
+        run: |
+          test "${ENV_DRY_EXIT_CODE}" = "0"
+
+      - name: Run action (failure propagation)
+        id: fail
+        continue-on-error: true
+        env:
+          BM_MOCK_EXIT_CODE: '1'
+        uses: ./
+        with:
+          audience: https://example.test
+          working-directory: test-project
+          dry: 'true'
+
+      - name: Verify failure propagation
+        shell: bash
+        env:
+          FAIL_OUTCOME: ${{ steps.fail.outcome }}
+          FAIL_EXIT_CODE: ${{ steps.fail.outputs.exit_code }}
+        run: |
+          if [ "${FAIL_OUTCOME}" != "failure" ]; then
+            echo "::error::action step should have failed but got outcome=${FAIL_OUTCOME}"
+            exit 1
+          fi
+          test "${FAIL_EXIT_CODE}" = "1"
+
+  cli-install:
+    name: Install @basemachina/cli (${{ matrix.os }})
+    needs: [bats, lint]
+    # 呼び出し側の install パス (registry-url + scope + GITHUB_TOKEN) と、
+    # `npx --no-install @basemachina/cli` が node_modules を解決できることを検証する。
+    # 実 sync は BaseMachina backend 認証が必要なため CI からは検証しない (mock 側で担保)。
+    # fork PR では secrets / packages:read が無効化されるため skip
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@basemachina'
+
+      - name: Install CLI from registry
+        shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p test-project
+          cp tests/fixtures/package.installed.json test-project/package.json
+          (cd test-project && npm install)
+
+      # CLI 起動の検証 (--version 等) は CLI 仕様に依存するため行わない。
+      # node_modules への配置と、`npx --no-install` がパッケージを解決できることまで担保する
+      - name: Verify CLI is resolvable via node_modules
+        shell: bash
+        working-directory: test-project
+        run: |
+          test -d node_modules/@basemachina/cli
+          npm exec --no-install --prefix . -- node -e "require.resolve('@basemachina/cli/package.json')"

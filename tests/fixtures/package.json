@@ -1,0 +1,6 @@
+{
+  "name": "bm-action-integration-test",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Fixture project for bm-action self-test workflow. Uses mock CLI instead of real @basemachina/cli."
+}

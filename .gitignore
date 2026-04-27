@@ -1,0 +1,6 @@
+node_modules/
+bm-sync-output.txt
+bm-sync-output.md
+mock-call.log
+.DS_Store
+*.log
