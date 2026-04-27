@@ -28,12 +28,13 @@ bm::set_output() {
 bm::log_group_start() { printf '::group::%s\n' "${1:-}"; }
 bm::log_group_end()   { printf '::endgroup::\n'; }
 
-# モノレポで複数プロジェクトの sticky-comment を識別するため、
-# working-directory のハッシュを含めてデフォルトタグを算出する
+# dry-run / apply と、モノレポでの複数プロジェクトの sticky-comment を識別するため、
+# 実行モード・environment・working-directory のハッシュからデフォルトタグを算出する
 bm::default_comment_tag() {
-  local env_label="${1:-dev}"
-  local cwd="${2:-.}"
+  local mode="${1:-apply}"
+  local env_label="${2:-dev}"
+  local cwd="${3:-.}"
   local hash
   hash=$(printf '%s' "${cwd}" | shasum -a 256 | cut -c1-8)
-  printf 'bm-sync:%s:%s' "${env_label}" "${hash}"
+  printf 'bm-sync:%s:%s:%s' "${mode}" "${env_label}" "${hash}"
 }
