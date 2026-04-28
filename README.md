@@ -16,6 +16,7 @@
 
 - `actions/setup-node@v6` などで Node.js をセットアップ
 - `npm ci` / `pnpm install` / `yarn install` で `@basemachina/cli` を install
+- self-hosted runner で使う場合は `bash`, `curl`, `jq`, `shasum`, `npx` が利用できる必要があります
 
 ## Quick Start
 
@@ -53,10 +54,10 @@ jobs:
 |---|---|---|---|
 | `audience` | **Yes** | — | OIDC token の audience。BaseMachina trust policy に登録した値と同じものを指定 |
 | `environment-id` | No | `""` | 同期先の環境 ID。未指定なら開発環境へ sync |
-| `from` | No | `""` | 同期元の環境 ID (`--from`)。`environment-id` 指定時のみ有効 |
+| `from` | No | `""` | 同期元の環境 ID (`--from`)。`environment-id` 指定時のみ指定可能で、同期先とは異なる ID が必要 |
 | `working-directory` | No | `"."` | `basemachina.config.ts` が存在するディレクトリ |
 | `dry` | No | `"auto"` | `auto` は `pull_request` で dry-run / `true` 常時 dry / `false` 常時 apply |
-| `with-disable` | No | `"false"` | `--with-disable` を付与。`environment-id` 未指定時は設定ファイルにないアクションを開発環境で無効化、指定時は同期元で無効化されたアクションを同期先にも反映 |
+| `with-disable` | No | `"false"` | `true` / `false` を指定。`true` の場合は `--with-disable` を付与。`environment-id` 未指定時は設定ファイルにないアクションを開発環境で無効化、指定時は同期元で無効化されたアクションを同期先にも反映 |
 
 ## License
 
