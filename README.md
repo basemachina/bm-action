@@ -52,7 +52,6 @@ jobs:
 | Name | Required | Default | Description |
 |---|---|---|---|
 | `audience` | **Yes** | — | OIDC token の audience。BaseMachina trust policy に登録した値と同じものを指定 |
-| `command` | No | `"sync"` | サブコマンド。現在 `sync` のみサポート |
 | `environment-id` | No | `""` | 同期先の環境 ID。未指定なら開発環境へ sync |
 | `from` | No | `""` | 同期元の環境 ID (`--from`)。`environment-id` 指定時のみ有効 |
 | `working-directory` | No | `"."` | `basemachina.config.ts` が存在するディレクトリ |

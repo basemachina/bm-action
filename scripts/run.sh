@@ -14,18 +14,8 @@ case "${INPUT_DRY:-auto}" in
     ;;
 esac
 
-# 未知値は明示的に弾く (黙って無視させず、利用者に指定値のミスを伝える)
-command="${INPUT_COMMAND:-sync}"
-case "${command}" in
-  sync) ;;
-  *)
-    echo "::error::command input は 'sync' のみサポートされます (指定値: ${command})" >&2
-    exit 1
-    ;;
-esac
-
 # CLI の現仕様で environment ID は positional 引数
-args=("${command}")
+args=("sync")
 sync_mode="apply"
 
 if [ -n "${INPUT_ENVIRONMENT_ID:-}" ]; then
