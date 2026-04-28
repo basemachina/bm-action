@@ -14,6 +14,24 @@ case "${INPUT_DRY:-auto}" in
     ;;
 esac
 
+case "${INPUT_WITH_DISABLE:-false}" in
+  true|false) ;;
+  *)
+    echo "::error::with-disable input は 'true' / 'false' のいずれかを指定してください (指定値: ${INPUT_WITH_DISABLE})" >&2
+    exit 1
+    ;;
+esac
+
+if [ -n "${INPUT_FROM:-}" ] && [ -z "${INPUT_ENVIRONMENT_ID:-}" ]; then
+  echo "::error::from input は environment-id 指定時のみ使用できます" >&2
+  exit 1
+fi
+
+if [ -n "${INPUT_FROM:-}" ] && [ "${INPUT_FROM}" = "${INPUT_ENVIRONMENT_ID:-}" ]; then
+  echo "::error::from input は environment-id と異なる環境 ID を指定してください" >&2
+  exit 1
+fi
+
 # CLI の現仕様で environment ID は positional 引数
 args=("sync")
 sync_mode="apply"

@@ -85,6 +85,13 @@ setup() {
   [[ "$output" == *"dry input は 'auto' / 'true' / 'false'"* ]]
 }
 
+@test "with-disable に invalid 値を指定するとエラー" {
+  export INPUT_WITH_DISABLE="invalid"
+  run "${PROJECT_ROOT}/scripts/run.sh"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"with-disable input は 'true' / 'false'"* ]]
+}
+
 @test "with-disable=true + environment 指定でも --with-disable が付く (環境間で無効化状態を同期)" {
   export INPUT_ENVIRONMENT_ID="env-abc"
   export INPUT_WITH_DISABLE="true"
@@ -110,6 +117,21 @@ setup() {
   [ "$status" -eq 0 ]
   run cat "${BM_MOCK_CALL_LOG}"
   [[ "$output" == *"--from env-from"* ]]
+}
+
+@test "from 指定かつ environment ID 未指定ならエラー" {
+  export INPUT_FROM="env-from"
+  run "${PROJECT_ROOT}/scripts/run.sh"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"from input は environment-id 指定時のみ使用できます"* ]]
+}
+
+@test "from と environment ID が同一ならエラー" {
+  export INPUT_ENVIRONMENT_ID="env-abc"
+  export INPUT_FROM="env-abc"
+  run "${PROJECT_ROOT}/scripts/run.sh"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"from input は environment-id と異なる環境 ID"* ]]
 }
 
 @test "bm sync 失敗時も run.sh 自体は 0 で返り exit_code output に値が入る" {

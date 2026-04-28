@@ -14,7 +14,7 @@ inputs:
     required: false
     default: ''
   from:
-    description: 'Source environment ID passed as `--from`. Effective only when `environment-id` is set, and must differ from the target.'
+    description: 'Source environment ID passed as `--from`. Valid only when `environment-id` is set, and must differ from the target.'
     required: false
     default: ''
   working-directory:
@@ -26,7 +26,7 @@ inputs:
     required: false
     default: 'auto'
   with-disable:
-    description: 'Pass `--with-disable` to `bm sync`. Without `environment-id`, disables actions missing from the config file in the development environment. With `environment-id`, propagates the disabled state from the source environment to the target.'
+    description: 'Pass `--with-disable` to `bm sync` when `true`. Must be `true` or `false`. Without `environment-id`, disables actions missing from the config file in the development environment. With `environment-id`, propagates the disabled state from the source environment to the target.'
     required: false
     default: 'false'
 
