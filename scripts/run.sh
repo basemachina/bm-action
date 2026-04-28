@@ -26,6 +26,7 @@ esac
 
 # CLI の現仕様で environment ID は positional 引数
 args=("${command}")
+sync_mode="apply"
 
 if [ -n "${INPUT_ENVIRONMENT_ID:-}" ]; then
   args+=("${INPUT_ENVIRONMENT_ID}")
@@ -42,12 +43,14 @@ fi
 case "${INPUT_DRY:-auto}" in
   true)
     args+=(--dry)
+    sync_mode="dry"
     ;;
   false)
     ;;
   auto)
     if [ "${GITHUB_EVENT_NAME:-}" = "pull_request" ]; then
       args+=(--dry)
+      sync_mode="dry"
     fi
     ;;
 esac
@@ -59,7 +62,7 @@ esac
 cli_cmd="${BM_CLI_COMMAND:-npx --no-install @basemachina/cli}"
 
 output_file="bm-sync-output.txt"
-bm::log_group_start "bm sync ${args[*]}"
+bm::log_group_start "bm ${args[*]}"
 set +e
 # cli_cmd は "npx --yes @basemachina/cli@latest" のように複数トークンを含む文字列として
 # 保持するため、意図的に word-split させる
@@ -85,10 +88,10 @@ if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
   cat "${output_file}" >> "${GITHUB_STEP_SUMMARY}"
 fi
 
-# 同一 PR 内で複数 job が本 Action を呼ぶケースで sticky-comment が混線しないよう、
-# environment + working-directory のハッシュから識別 tag を自動算出する
+# dry-run と apply、および同一 PR 内で複数 job が本 Action を呼ぶケースで
+# sticky-comment が混線しないよう、実行モード + environment + working-directory から識別 tag を算出する
 env_label="${INPUT_ENVIRONMENT_ID:-dev}"
-tag=$(bm::default_comment_tag "${env_label}" "${PWD}")
+tag=$(bm::default_comment_tag "${sync_mode}" "${env_label}" "${PWD}")
 
 bm::set_output "exit_code" "${exit_code}"
 bm::set_output "comment_tag" "${tag}"
