@@ -58,10 +58,6 @@ jobs:
 | `dry` | No | `"auto"` | `auto` は `pull_request` で dry-run / `true` 常時 dry / `false` 常時 apply |
 | `with-disable` | No | `"false"` | `--with-disable` を付与。`environment-id` 未指定時は設定ファイルにないアクションを開発環境で無効化、指定時は同期元で無効化されたアクションを同期先にも反映 |
 
-## Future Actions
-
-`basemachina/bm-action@v1` は `bm sync` 専用の Action です。将来 `setup` や `validate` など別の CI タスクを提供する場合は、同じリポジトリ内の subdirectory Action (`basemachina/bm-action/setup@v1` など) として追加します。
-
 ## License
 
 MIT
