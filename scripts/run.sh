@@ -14,18 +14,8 @@ case "${INPUT_DRY:-auto}" in
     ;;
 esac
 
-# 未知値は明示的に弾く (黙って無視させず、利用者に指定値のミスを伝える)
-command="${INPUT_COMMAND:-sync}"
-case "${command}" in
-  sync) ;;
-  *)
-    echo "::error::command input は 'sync' のみサポートされます (指定値: ${command})" >&2
-    exit 1
-    ;;
-esac
-
 # CLI の現仕様で environment ID は positional 引数
-args=("${command}")
+args=("sync")
 
 if [ -n "${INPUT_ENVIRONMENT_ID:-}" ]; then
   args+=("${INPUT_ENVIRONMENT_ID}")
@@ -59,7 +49,7 @@ esac
 cli_cmd="${BM_CLI_COMMAND:-npx --no-install @basemachina/cli}"
 
 output_file="bm-sync-output.txt"
-bm::log_group_start "bm sync ${args[*]}"
+bm::log_group_start "bm ${args[*]}"
 set +e
 # cli_cmd は "npx --yes @basemachina/cli@latest" のように複数トークンを含む文字列として
 # 保持するため、意図的に word-split させる

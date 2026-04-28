@@ -4,7 +4,6 @@ load 'helpers/common'
 
 setup() {
   setup_common
-  export INPUT_COMMAND="sync"
   export INPUT_ENVIRONMENT_ID=""
   export INPUT_FROM=""
   export INPUT_DRY="auto"
@@ -154,19 +153,4 @@ setup() {
   [ "$status" -eq 0 ]
   run cat "${GITHUB_OUTPUT}"
   [[ "$output" == *"comment_tag=bm-sync:env-abc:"* ]]
-}
-
-@test "command=sync が default で適用される (未設定時)" {
-  unset INPUT_COMMAND
-  run "${PROJECT_ROOT}/scripts/run.sh"
-  [ "$status" -eq 0 ]
-  run cat "${BM_MOCK_CALL_LOG}"
-  [[ "$output" == *"args: sync"* ]]
-}
-
-@test "command に未知の値を指定するとエラー" {
-  export INPUT_COMMAND="hotfix"
-  run "${PROJECT_ROOT}/scripts/run.sh"
-  [ "$status" -ne 0 ]
-  [[ "$output" == *"command input は 'sync' のみサポートされます"* ]]
 }

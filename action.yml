@@ -1,5 +1,5 @@
-name: 'BaseMachina'
-description: 'Manage BaseMachina actions from your CI/CD pipeline.'
+name: 'BaseMachina Sync'
+description: 'Run bm sync from your CI/CD pipeline.'
 author: 'BaseMachina'
 branding:
   icon: code
@@ -9,10 +9,6 @@ inputs:
   audience:
     description: 'OIDC audience to request from GitHub. Must match the audience configured on the BaseMachina trust policy.'
     required: true
-  command:
-    description: 'Subcommand to run. Currently only `sync` is supported.'
-    required: false
-    default: 'sync'
   environment-id:
     description: 'Target environment ID. Omit to sync to the development environment.'
     required: false
@@ -54,7 +50,6 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       env:
-        INPUT_COMMAND: ${{ inputs.command }}
         INPUT_ENVIRONMENT_ID: ${{ inputs.environment-id }}
         INPUT_FROM: ${{ inputs.from }}
         INPUT_DRY: ${{ inputs.dry }}
