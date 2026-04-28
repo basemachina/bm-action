@@ -20,6 +20,13 @@ setup() {
   [[ "$output" == *"args: sync"* ]]
 }
 
+@test "log group title は sync を二重表示しない" {
+  run "${PROJECT_ROOT}/scripts/run.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"::group::bm sync"* ]]
+  [[ "$output" != *"::group::bm sync sync"* ]]
+}
+
 @test "environment 指定で positional 引数が付く" {
   export INPUT_ENVIRONMENT_ID="env-abc"
   run "${PROJECT_ROOT}/scripts/run.sh"
@@ -34,6 +41,15 @@ setup() {
   [ "$status" -eq 0 ]
   run cat "${BM_MOCK_CALL_LOG}"
   [[ "$output" == *"--dry"* ]]
+}
+
+@test "environment dry-run の log group title は実行コマンド相当になる" {
+  export INPUT_ENVIRONMENT_ID="env-abc"
+  export INPUT_DRY="true"
+  run "${PROJECT_ROOT}/scripts/run.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"::group::bm sync env-abc --dry"* ]]
+  [[ "$output" != *"::group::bm sync sync env-abc --dry"* ]]
 }
 
 @test "push event かつ dry=auto で --dry が付かない" {
@@ -147,10 +163,19 @@ setup() {
   [[ "$output" != *"## BaseMachina Sync"* ]]
 }
 
-@test "comment_tag は環境 ID とディレクトリハッシュから自動算出される" {
+@test "comment_tag は apply/dry-run と環境 ID とディレクトリハッシュから自動算出される" {
   export INPUT_ENVIRONMENT_ID="env-abc"
   run "${PROJECT_ROOT}/scripts/run.sh"
   [ "$status" -eq 0 ]
   run cat "${GITHUB_OUTPUT}"
-  [[ "$output" == *"comment_tag=bm-sync:env-abc:"* ]]
+  [[ "$output" == *"comment_tag=bm-sync:apply:env-abc:"* ]]
+}
+
+@test "dry-run の comment_tag は apply と別 header になる" {
+  export INPUT_ENVIRONMENT_ID="env-abc"
+  export INPUT_DRY="true"
+  run "${PROJECT_ROOT}/scripts/run.sh"
+  [ "$status" -eq 0 ]
+  run cat "${GITHUB_OUTPUT}"
+  [[ "$output" == *"comment_tag=bm-sync:dry:env-abc:"* ]]
 }

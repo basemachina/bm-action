@@ -5,7 +5,7 @@
 主な機能:
 
 - **OIDC 認証**: GitHub Actions の OIDC ID token を BaseMachina に提示します。secret に token を保存する必要はなく、workflow に `permissions: id-token: write` と `audience` を書くだけで認証が通ります
-- **PR sticky-comment**: `bm sync` の差分出力を PR コメントとして自動投稿します。再実行ごとに同じコメントが上書き更新されるため、最新の差分だけが表示されます
+- **PR sticky-comment**: `bm sync` の差分出力を PR コメントとして自動投稿します。dry-run / apply ごとに別コメントとして追跡し、再実行ごとに同じ種別のコメントだけを上書き更新します
 - **dry-run 自動判定**: `pull_request` event では差分プレビュー (`--dry`) を実行し、`push` event では実 apply に自動で切り替わります。event ごとに workflow を分けたり `if:` を書く必要はありません
 
 詳細仕様は[公式ドキュメント (CI/CD の設定)](https://docs.basemachina.com/preview/code_management/ci_cd/)を参照してください。

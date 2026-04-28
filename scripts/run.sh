@@ -16,6 +16,7 @@ esac
 
 # CLI の現仕様で environment ID は positional 引数
 args=("sync")
+sync_mode="apply"
 
 if [ -n "${INPUT_ENVIRONMENT_ID:-}" ]; then
   args+=("${INPUT_ENVIRONMENT_ID}")
@@ -32,12 +33,14 @@ fi
 case "${INPUT_DRY:-auto}" in
   true)
     args+=(--dry)
+    sync_mode="dry"
     ;;
   false)
     ;;
   auto)
     if [ "${GITHUB_EVENT_NAME:-}" = "pull_request" ]; then
       args+=(--dry)
+      sync_mode="dry"
     fi
     ;;
 esac
@@ -75,10 +78,10 @@ if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
   cat "${output_file}" >> "${GITHUB_STEP_SUMMARY}"
 fi
 
-# 同一 PR 内で複数 job が本 Action を呼ぶケースで sticky-comment が混線しないよう、
-# environment + working-directory のハッシュから識別 tag を自動算出する
+# dry-run と apply、および同一 PR 内で複数 job が本 Action を呼ぶケースで
+# sticky-comment が混線しないよう、実行モード + environment + working-directory から識別 tag を算出する
 env_label="${INPUT_ENVIRONMENT_ID:-dev}"
-tag=$(bm::default_comment_tag "${env_label}" "${PWD}")
+tag=$(bm::default_comment_tag "${sync_mode}" "${env_label}" "${PWD}")
 
 bm::set_output "exit_code" "${exit_code}"
 bm::set_output "comment_tag" "${tag}"
