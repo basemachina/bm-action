@@ -45,9 +45,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     permissions:
       contents: read
-      id-token: write
       pull-requests: write
       packages: read
+    env:
+      MOCK_OIDC_PORT: '34567'
+      ACTIONS_ID_TOKEN_REQUEST_URL: 'http://127.0.0.1:34567/token?'
+      ACTIONS_ID_TOKEN_REQUEST_TOKEN: 'mock-request-token'
     steps:
       - uses: actions/checkout@v6
 
@@ -68,6 +71,20 @@ jobs:
         shell: bash
         run: |
           echo "BM_CLI_COMMAND=${GITHUB_WORKSPACE}/tests/fixtures/bm-mock" >> "$GITHUB_ENV"
+
+      # auth.sh が要求する OIDC エンドポイントをローカル mock へ差し替える。
+      # fork PR には id-token: write が付与されず本物の OIDC が使えないため、トークン値を参照しない
+      # 統合テストでは mock で代替する。
+      - name: Start mock OIDC endpoint
+        shell: bash
+        run: |
+          node "${GITHUB_WORKSPACE}/tests/fixtures/mock-oidc-server.js" &
+          echo "$!" > "${RUNNER_TEMP}/mock-oidc.pid"
+          # 接続確立まで retry
+          curl -sS -o /dev/null --retry 10 --retry-connrefused --retry-delay 1 \
+            "http://127.0.0.1:${MOCK_OIDC_PORT}/token?audience=ping" \
+            || { echo "::error::mock OIDC endpoint not reachable on port ${MOCK_OIDC_PORT}"; exit 1; }
+          echo "mock OIDC endpoint ready on port ${MOCK_OIDC_PORT}"
 
       - name: Run action (dev sync, dry-run)
         id: dev-dry
@@ -122,6 +139,15 @@ jobs:
             exit 1
           fi
           test "${FAIL_EXIT_CODE}" = "1"
+
+      - name: Stop mock OIDC endpoint
+        if: always()
+        shell: bash
+        run: |
+          pid_file="${RUNNER_TEMP}/mock-oidc.pid"
+          if [ -f "${pid_file}" ]; then
+            kill "$(cat "${pid_file}")" 2>/dev/null || true
+          fi
 
   cli-install:
     name: Install @basemachina/cli (${{ matrix.os }})
