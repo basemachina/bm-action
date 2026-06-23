@@ -201,3 +201,19 @@ setup() {
   run cat "${GITHUB_OUTPUT}"
   [[ "$output" == *"comment_tag=bm-sync:dry:env-abc:"* ]]
 }
+
+@test "service-account-email を設定すると BM_SERVICE_ACCOUNT_EMAIL が CLI に伝播する" {
+  export BM_SERVICE_ACCOUNT_EMAIL="sa@example.com"
+  run "${PROJECT_ROOT}/scripts/run.sh"
+  [ "$status" -eq 0 ]
+  run cat "${BM_MOCK_CALL_LOG}"
+  [[ "$output" == *"env.BM_SERVICE_ACCOUNT_EMAIL=sa@example.com"* ]]
+}
+
+@test "service-account-email 未設定なら BM_SERVICE_ACCOUNT_EMAIL は空" {
+  run "${PROJECT_ROOT}/scripts/run.sh"
+  [ "$status" -eq 0 ]
+  run cat "${BM_MOCK_CALL_LOG}"
+  [[ "$output" == *"env.BM_SERVICE_ACCOUNT_EMAIL="* ]]
+  [[ "$output" != *"env.BM_SERVICE_ACCOUNT_EMAIL=sa"* ]]
+}
