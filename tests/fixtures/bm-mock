@@ -6,6 +6,7 @@ CALL_LOG="${BM_MOCK_CALL_LOG:-mock-call.log}"
 {
   printf 'args: %s\n' "$*"
   printf 'env.BM_OIDC_TOKEN=%s\n' "${BM_OIDC_TOKEN:-}"
+  printf 'env.BM_SERVICE_ACCOUNT_EMAIL=%s\n' "${BM_SERVICE_ACCOUNT_EMAIL:-}"
 } >> "${CALL_LOG}"
 
 OUTPUT="${BM_MOCK_OUTPUT:-mock sync output}"

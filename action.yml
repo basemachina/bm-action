@@ -29,6 +29,10 @@ inputs:
     description: 'Pass `--with-disable` to `bm sync` when `true`. Must be `true` or `false`. Without `environment-id`, disables actions missing from the config file in the development environment. With `environment-id`, propagates the disabled state from the source environment to the target.'
     required: false
     default: 'false'
+  service-account-email:
+    description: 'Optional service account email used to disambiguate which service account to authenticate as when the OIDC ID token matches multiple service account trust policies. Propagated to the CLI as BM_SERVICE_ACCOUNT_EMAIL. Omit to keep current behavior.'
+    required: false
+    default: ''
 
 outputs:
   exit_code:
@@ -55,6 +59,7 @@ runs:
         INPUT_DRY: ${{ inputs.dry }}
         INPUT_WITH_DISABLE: ${{ inputs.with-disable }}
         BM_OIDC_TOKEN: ${{ steps.auth.outputs.oidc_token }}
+        BM_SERVICE_ACCOUNT_EMAIL: ${{ inputs.service-account-email }}
         NODE_AUTH_TOKEN: ${{ github.token }}
         GITHUB_EVENT_NAME: ${{ github.event_name }}
       run: ${{ github.action_path }}/scripts/run.sh

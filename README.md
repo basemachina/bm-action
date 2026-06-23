@@ -58,6 +58,7 @@ jobs:
 | `working-directory` | No | `"."` | `basemachina.config.ts` が存在するディレクトリ |
 | `dry` | No | `"auto"` | `auto` は `pull_request` で dry-run / `true` 常時 dry / `false` 常時 apply |
 | `with-disable` | No | `"false"` | `true` / `false` を指定。`true` の場合は `--with-disable` を付与。`environment-id` 未指定時は設定ファイルにないアクションを開発環境で無効化、指定時は同期元で無効化されたアクションを同期先にも反映 |
+| `service-account-email` | No | `""` | OIDC ID Token が複数のサービスアカウント信頼ポリシーに合致する場合に、認証対象のサービスアカウントを明示する。CLI へ `BM_SERVICE_ACCOUNT_EMAIL` として伝播。未指定なら現行どおりの動作 |
 
 ## License
 
