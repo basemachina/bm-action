@@ -8,6 +8,7 @@ setup() {
   export INPUT_FROM=""
   export INPUT_DRY="auto"
   export INPUT_WITH_DISABLE="false"
+  export INPUT_PIN_VERSION="false"
   export GITHUB_EVENT_NAME="push"
   export BM_MOCK_CALL_LOG="${BATS_TEST_TMPDIR}/mock-call.log"
   cd "${BATS_TEST_TMPDIR}"
@@ -132,6 +133,38 @@ setup() {
   run "${PROJECT_ROOT}/scripts/run.sh"
   [ "$status" -ne 0 ]
   [[ "$output" == *"from input は environment-id と異なる環境 ID"* ]]
+}
+
+@test "pin-version に invalid 値を指定するとエラー" {
+  export INPUT_PIN_VERSION="invalid"
+  run "${PROJECT_ROOT}/scripts/run.sh"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"pin-version input は 'true' / 'false'"* ]]
+}
+
+@test "pin-version=true + environment 指定で --pin-version が付く" {
+  export INPUT_ENVIRONMENT_ID="env-abc"
+  export INPUT_PIN_VERSION="true"
+  run "${PROJECT_ROOT}/scripts/run.sh"
+  [ "$status" -eq 0 ]
+  run cat "${BM_MOCK_CALL_LOG}"
+  [[ "$output" == *"sync env-abc"* ]]
+  [[ "$output" == *"--pin-version"* ]]
+}
+
+@test "pin-version=true かつ environment ID 未指定ならエラー" {
+  export INPUT_PIN_VERSION="true"
+  run "${PROJECT_ROOT}/scripts/run.sh"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"pin-version input は environment-id 指定時のみ使用できます"* ]]
+}
+
+@test "pin-version=false なら --pin-version は付かない" {
+  export INPUT_ENVIRONMENT_ID="env-abc"
+  run "${PROJECT_ROOT}/scripts/run.sh"
+  [ "$status" -eq 0 ]
+  run cat "${BM_MOCK_CALL_LOG}"
+  [[ "$output" != *"--pin-version"* ]]
 }
 
 @test "bm sync 失敗時も run.sh 自体は 0 で返り exit_code output に値が入る" {
