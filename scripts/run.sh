@@ -22,8 +22,21 @@ case "${INPUT_WITH_DISABLE:-false}" in
     ;;
 esac
 
+case "${INPUT_PIN_VERSION:-false}" in
+  true|false) ;;
+  *)
+    echo "::error::pin-version input は 'true' / 'false' のいずれかを指定してください (指定値: ${INPUT_PIN_VERSION})" >&2
+    exit 1
+    ;;
+esac
+
 if [ -n "${INPUT_FROM:-}" ] && [ -z "${INPUT_ENVIRONMENT_ID:-}" ]; then
   echo "::error::from input は environment-id 指定時のみ使用できます" >&2
+  exit 1
+fi
+
+if [ "${INPUT_PIN_VERSION:-false}" = "true" ] && [ -z "${INPUT_ENVIRONMENT_ID:-}" ]; then
+  echo "::error::pin-version input は environment-id 指定時のみ使用できます" >&2
   exit 1
 fi
 
@@ -46,6 +59,10 @@ fi
 
 if [ "${INPUT_WITH_DISABLE:-false}" = "true" ]; then
   args+=(--with-disable)
+fi
+
+if [ "${INPUT_PIN_VERSION:-false}" = "true" ]; then
+  args+=(--pin-version)
 fi
 
 case "${INPUT_DRY:-auto}" in
