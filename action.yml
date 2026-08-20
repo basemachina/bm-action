@@ -30,7 +30,7 @@ inputs:
     required: false
     default: 'false'
   pin-version:
-    description: 'Pass `--pin-version` to `bm sync` when `true`. Must be `true` or `false`. Valid only when `environment-id` is set. Pins the target environment to the version the source environment points to at sync time, instead of leaving it on "always latest". Requires @basemachina/cli 1.5.0 or later.'
+    description: 'Pass `--pin-version` to `bm sync` when `true`. Must be `true` or `false`. Valid only when `environment-id` is set. Pins the target environment to the version the source environment points to at sync time, instead of leaving it on "always latest". Requires @basemachina/cli 1.5.0 or later; the Action fails with a validation error before running `bm sync` if the installed CLI is older.'
     required: false
     default: 'false'
   service-account-email:
