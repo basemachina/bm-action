@@ -167,6 +167,66 @@ setup() {
   [[ "$output" != *"--pin-version"* ]]
 }
 
+@test "pin-version=true かつ install 済み CLI が 1.5.0 未満ならエラー" {
+  export INPUT_ENVIRONMENT_ID="env-abc"
+  export INPUT_PIN_VERSION="true"
+  export BM_CLI_VERSION="1.4.9"
+  run "${PROJECT_ROOT}/scripts/run.sh"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"pin-version input には @basemachina/cli 1.5.0 以降が必要です"* ]]
+  [[ "$output" == *"1.4.9"* ]]
+}
+
+@test "pin-version=true かつ install 済み CLI が 1.5.0 なら通る" {
+  export INPUT_ENVIRONMENT_ID="env-abc"
+  export INPUT_PIN_VERSION="true"
+  export BM_CLI_VERSION="1.5.0"
+  run "${PROJECT_ROOT}/scripts/run.sh"
+  [ "$status" -eq 0 ]
+  run cat "${BM_MOCK_CALL_LOG}"
+  [[ "$output" == *"--pin-version"* ]]
+}
+
+@test "pin-version=true かつ install 済み CLI が 1.10.0 なら通る (文字列比較にならない)" {
+  export INPUT_ENVIRONMENT_ID="env-abc"
+  export INPUT_PIN_VERSION="true"
+  export BM_CLI_VERSION="1.10.0"
+  run "${PROJECT_ROOT}/scripts/run.sh"
+  [ "$status" -eq 0 ]
+  run cat "${BM_MOCK_CALL_LOG}"
+  [[ "$output" == *"--pin-version"* ]]
+}
+
+@test "pin-version=true かつ install 済み CLI が prerelease バージョンなら notice を出して通る" {
+  export INPUT_ENVIRONMENT_ID="env-abc"
+  export INPUT_PIN_VERSION="true"
+  export BM_CLI_VERSION="0.0.1-dev.20260803034543.gf8c0f86"
+  run "${PROJECT_ROOT}/scripts/run.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"::notice::"* ]]
+  [[ "$output" == *"prerelease"* ]]
+  run cat "${BM_MOCK_CALL_LOG}"
+  [[ "$output" == *"--pin-version"* ]]
+}
+
+@test "pin-version=true かつ install 済み CLI のバージョンが判定できなければ warning を出して通る" {
+  export INPUT_ENVIRONMENT_ID="env-abc"
+  export INPUT_PIN_VERSION="true"
+  run "${PROJECT_ROOT}/scripts/run.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"::warning::"* ]]
+  run cat "${BM_MOCK_CALL_LOG}"
+  [[ "$output" == *"--pin-version"* ]]
+}
+
+@test "pin-version=false なら CLI バージョンが古くても検証されない" {
+  export INPUT_ENVIRONMENT_ID="env-abc"
+  export BM_CLI_VERSION="1.0.0"
+  run "${PROJECT_ROOT}/scripts/run.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"pin-version input には @basemachina/cli"* ]]
+}
+
 @test "bm sync 失敗時も run.sh 自体は 0 で返り exit_code output に値が入る" {
   export BM_MOCK_EXIT_CODE=1
   run "${PROJECT_ROOT}/scripts/run.sh"
